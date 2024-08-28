@@ -1,0 +1,32 @@
+---
+- name: Populate keystone rc file with new user credentials
+  template:
+    src: keystone.rc
+    dest: "/home/{{ lafsed.parameter_defaults.vim_tenant_username }}/rc/keystone.rc"
+  vars:
+    tenant_id: "{{ bootstrapvalues.project.id }}"
+
+- name: Populate LAF SED for required variables
+  json_patch:
+    src: "{{ sedfilelocation.laf }}"
+    dest: "/home/{{ lafsed.parameter_defaults.vim_tenant_username }}/sed/lafsed.json"
+    pretty: yes
+    operations:
+      - op: replace
+        path: "parameter_defaults/server_group_for_svc_vm"
+        value: "{{ svc_vms_server_group_id_result.stdout }}"
+      - op: replace
+        path: "parameter_defaults/server_group_for_db_vm"
+        value: "{{ db_vms_server_group_id_result.stdout }}"
+      - op: replace
+        path: "parameter_defaults/security_group_id"
+        value: "{{ security_group_stack_result.stack.outputs[0].output_value }}"
+      - op: replace
+        path: "parameter_defaults/internal_net_id"
+        value: "{{ internal_network_id_result.stdout }}"
+      - op: replace
+        path: "parameter_defaults/cinder_volume_id"
+        value: "{{ volumn_result_0.volume.id }},{{ volumn_result_1.volume.id }}"
+      - op: replace
+        path: "parameter_defaults/vim_tenant_id"
+        value: "{{ bootstrapvalues.project.id }}"

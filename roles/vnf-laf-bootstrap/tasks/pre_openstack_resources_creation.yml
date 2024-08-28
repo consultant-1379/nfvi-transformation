@@ -1,0 +1,198 @@
+- name: Creating a Keypair from stack
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.keypair }}"
+    state: present
+    template: "{{ heatStacks.keypair }}"
+    environment:
+      - "{{ sedfilelocation.enm }}"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: keypair_stack_result
+
+- name: Keypair Stack output
+  debug:
+    msg: "{{ keypair_stack_result.stack.outputs }}"
+
+- name: Create a pem file in user home directory
+  copy:
+    content: "{{ keypair_stack_result.stack.outputs[1].output_value }}"
+    dest: "/home/{{ lafsed.parameter_defaults.vim_tenant_username }}/key/{{ lafsed.parameter_defaults.keypair }}.pem"
+    owner: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    group: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    mode: '0400' 
+
+- name: Creating Volume 0 for VNF LAF
+  os_volume:
+    display_name: "{{ lafsed.parameter_defaults.deployment_id }}_vnflcm_volume_0" 
+    size: "120"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register:  volumn_result_0
+
+- name: Volume 0 ID
+  debug:
+    msg: "{{ volumn_result_0.volume.id }}"
+
+- name: Creating Volume 1 for VNF LAF
+  os_volume:
+    display_name: "{{ lafsed.parameter_defaults.deployment_id }}_vnflcm_volume_1" 
+    size: "120"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register:  volumn_result_1
+
+- name: Volume 1 ID
+  debug:
+    msg: "{{ volumn_result_1.volume.id }}"
+
+- name: Creating Internal network from HOTemplate
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.deployment_id }}_network_internal_stack"
+    state: present
+    template: "{{ heatStacks.internal_network }}"
+    environment:
+      - "{{ sedfilelocation.enm }}"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: internal_network_stack_result
+
+- name: Get Internal Network ID created from stack
+  shell: "openstack --insecure network list | grep {{ internal_network_stack_result.stack.parameters.enm_internal_network_name }} | awk '{print $2}'"
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: internal_network_id_result
+
+- name: Internal Network ID
+  debug:
+    msg: "{{ internal_network_id_result.stdout }}" 
+
+- name: Creating Security Group for VNF LCM
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.deployment_id }}_vnflcm_security_group"
+    state: present
+    template: "{{ heatStacks.security_group }}"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: security_group_stack_result
+
+- name: Security Group ID
+  debug:
+    msg: "{{ security_group_stack_result.stack.outputs[0].output_value }}" 
+
+- name: Creating Server Group for VNF LCM
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.deployment_id }}_vnflcm_servergroup"
+    state: present
+    template: "{{ heatStacks.server_group }}"
+    environment:
+      - "{{ sedfilelocation.laf }}"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+
+- name: Getting Server Group ID for Service VMs created from stack
+  shell: "openstack --insecure server group list | grep {{ lafsed.parameter_defaults.deployment_id }}_vnflcm_servergroup-0 | awk '{print $2}'"
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: svc_vms_server_group_id_result
+
+- name: Service VM Server Group ID
+  debug:
+    msg: "{{ svc_vms_server_group_id_result.stdout }}" 
+
+- name: Getting Server Group ID for DB VMs created from stack
+  shell: "openstack --insecure server group list | grep {{ lafsed.parameter_defaults.deployment_id }}_vnflcm_servergroup-1 | awk '{print $2}'"
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: db_vms_server_group_id_result
+
+- name: Server Group ID
+  debug:
+    msg: "{{ db_vms_server_group_id_result.stdout }}"
+
+- name: Creating Network Security Group Stack for ENM
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.deployment_id }}_network_security_group"
+    state: present
+    template: "{{ heatStacks.network_security_group }}"
+    environment:
+      - "{{ sedfilelocation.enm }}"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+
+- name: Getting External Network ID
+  shell: "openstack --insecure network list | grep {{ enmsed.parameter_defaults.enm_external_network_name }} | awk '{print $2}'"
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: external_net_id_result
+
+- name: Server Group ID
+  debug:
+    msg: "{{ external_net_id_result.stdout }}"
+
+
+- name: Creating VIP Ports for VNF LAF from HOTemplate
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.deployment_id }}_vnflcm_ipv4_vip"
+    state: present
+    template: "{{ heatStacks.vnf_laf_vip }}"
+    environment:
+      - "{{ sedfilelocation.laf }}"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: vnf_laf_vip_stack_result

@@ -1,0 +1,69 @@
+---
+- name: "Creating Openstack Project with name {{ lafsed.parameter_defaults.vim_tenant_name }}"
+  os_project:
+    name: "{{ lafsed.parameter_defaults.vim_tenant_name }}"
+    description: "Openstack Project for {{ lafsed.parameter_defaults.vim_tenant_name }}"
+    domain_id: default
+    validate_certs: no
+  environment:
+    - OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    - OS_PROJECT_ID: "{{ lookup('env', 'OS_PROJECT_ID') }}"
+    - OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    - OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
+    - OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"
+  register: bootstrapvalues
+
+- name: "Creating Openstack user with name {{ lafsed.parameter_defaults.vim_tenant_username }} for {{ lafsed.parameter_defaults.vim_tenant_name }} project"
+  os_user:
+    state: present
+    name: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    password: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+    default_project: "{{ lafsed.parameter_defaults.vim_tenant_name }}"
+    domain: default
+    validate_certs: no
+  environment:
+    - OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    - OS_PROJECT_ID: "{{ lookup('env', 'OS_PROJECT_ID') }}"
+    - OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    - OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
+    - OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"
+
+- name: Attaching user to admin role
+  os_user_role:
+    user: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    role: admin
+    project: "{{ lafsed.parameter_defaults.vim_tenant_name }}"
+    validate_certs: no
+  environment:
+    - OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    - OS_PROJECT_ID: "{{ lookup('env', 'OS_PROJECT_ID') }}"
+    - OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    - OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
+    - OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"
+
+- name: Setting quota for openstack project
+  os_quota:
+    name: "{{ lafsed.parameter_defaults.vim_tenant_name }}"
+    cores: "{{ quota.cores }}"
+    fixed_ips: "{{ quota.fixed_ips }}"
+    instances: "{{ quota.instances }}"
+    key_pairs: "{{ quota.key_pairs }}"
+    network: "{{ quota.networks }}"
+    port: "{{ quota.port }}"
+    ram: "{{ quota.ram }}"
+    security_group_rule: "{{ quota.secgroup_rules }}"
+    security_group: "{{ quota.secgroups }}"
+    subnet: "{{ quota.subnets }}"
+    volumes: "{{ quota.volumes }}"
+    gigabytes: "{{ quota.gigabytes }}"
+    backups: "{{ quota.backups }}"
+    backup_gigabytes: "{{ quota.backup_gigabytes }}"
+    snapshots: "{{ quota.snapshots }}"
+    server_groups: "{{ quota.server_groups }}"
+    validate_certs: no
+  environment:
+    - OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    - OS_PROJECT_ID: "{{ lookup('env', 'OS_PROJECT_ID') }}"
+    - OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    - OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
+    - OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"

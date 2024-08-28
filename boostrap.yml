@@ -1,0 +1,7 @@
+---
+- name: Bootstrap VNF LAF Infrastructure
+  hosts: localhost
+  become: yes
+  become_user: root
+  roles:
+    - vnf-laf-bootstrap

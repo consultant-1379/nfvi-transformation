@@ -1,0 +1,229 @@
+[root@openstack-client key]# openstack project create --description "FR staging enm 02" frstagingenm02
++-------------+----------------------------------+
+| Field       | Value                            |
++-------------+----------------------------------+
+| description | FR staging enm 02                |
+| domain_id   | default                          |
+| enabled     | True                             |
+| id          | 07bfa2a44a904a0692cba6127b48161c |
+| is_domain   | False                            |
+| name        | frstagingenm02                   |
+| parent_id   | default                          |
+| tags        | []                               |
++-------------+----------------------------------+
+
+[root@openstack-client key]# openstack user create --project frstagingenm02 --password Ericss0n frstagingenm02
++---------------------+----------------------------------+
+| Field               | Value                            |
++---------------------+----------------------------------+
+| default_project_id  | 07bfa2a44a904a0692cba6127b48161c |
+| domain_id           | default                          |
+| enabled             | True                             |
+| id                  | c91b2dc4089947e98ce75cecfe930114 |
+| name                | frstagingenm02                   |
+| password_expires_at | None                             |
++---------------------+----------------------------------+
+
+
+[root@openstack-client key]# openstack role add --project frstagingenm02 --user frstagingenm02 admin
+[root@openstack-client key]#
+[root@openstack-client key]#
+[root@openstack-client key]# openstack user show frstagingenm02
++---------------------+----------------------------------+
+| Field               | Value                            |
++---------------------+----------------------------------+
+| default_project_id  | 07bfa2a44a904a0692cba6127b48161c |
+| domain_id           | default                          |
+| enabled             | True                             |
+| id                  | c91b2dc4089947e98ce75cecfe930114 |
+| name                | frstagingenm02                   |
+| password_expires_at | None                             |
++---------------------+----------------------------------+
+
+[root@openstack-client key]# openstack role assignment list --user frstagingenm02 --project frstagingenm02 --names
++-------+------------------------+-------+------------------------+--------+--------+-----------+
+| Role  | User                   | Group | Project                | Domain | System | Inherited |
++-------+------------------------+-------+------------------------+--------+--------+-----------+
+| admin | frstagingenm02@Default |       | frstagingenm02@Default |        |        | False     |
++-------+------------------------+-------+------------------------+--------+--------+-----------+
+
+
+Login to Openstack Dashboard (Horizon) using the newly created user and password
+https://10.12.63.251/dashboard
+
+Download the RC key stone fine and add it to the RC directory in home
+
+[frstagingenm02@openstack-client key]$ openstack quota set  --cores 553 --fixed-ips -1 --instances 222 --key-pairs 5 --networks 3 --port 320 --ram 1511629 --secgroup-rules 275  --secgroups 10 --subnets 3  --volumes 121  --gigabytes 9841 --backups 105 --backup-gigabytes 6168 --snapshots 50 --server-groups 150 frstagingenm02
+
+
+Update the SED file accordingly
+
+
+Update VIM Tenant Id and Internal Network Id , mtu etc
+
+
+
++---------------------+--------------------------------------+
+
+
+openstack stack create -e ENM_SiteEngineering_Frankfurt_frstaging02_19.09.json -t /tmp-19.09/ENM/opt/ericsson/ERICenmcloudtemplates_CXP9033639/infrastructure_resources/key_pair.yaml frstagingenm02_cu_key -f json
+{
+  "description": "Key Pair Template",
+  "stack_status_reason": "Stack CREATE completed successfully",
+  "stack_name": "frstagingenm02_cu_key",
+  "creation_time": "2019-10-30T11:02:51Z",
+  "updated_time": null,
+  "stack_status": "CREATE_COMPLETE",
+  "id": "8119c4ee-ac16-425c-aa08-0438905867bb"
+}
+
+
+
+Update LAF sed file with new key pair name
+
+
+#openstack stack create -e ENM_SiteEngineering_Frankfurt_frstaging02_19.09.json -t infrastructure_resources/network_internal_stack.yaml frstagingenm02_network_internal_stack
+openstack stack create -e /home/frstagingenm02/sed/ENM_SiteEngineering_Frankfurt_frstaging02_19.09.json -t /tmp-19.09/ENM/opt/ericsson/ERICenmcloudtemplates_CXP9033639/infrastructure_resources/network_internal_stack.yaml frstagingenm02_network_internal_stack
+
+
+
+[frstagingenm02@openstack-client VNF-LCM]$ openstack stack create --wait -t vnflcm-security-group.yaml frstagingenm02_vnflcm_security_group
+2019-10-29 12:41:46Z [frstagingenm02_vnflcm_security_group]: CREATE_IN_PROGRESS  Stack CREATE started
+2019-10-29 12:41:47Z [frstagingenm02_vnflcm_security_group.security_group]: CREATE_IN_PROGRESS  state changed
+2019-10-29 12:42:09Z [frstagingenm02_vnflcm_security_group.security_group]: CREATE_COMPLETE  state changed
+2019-10-29 12:42:09Z [frstagingenm02_vnflcm_security_group]: CREATE_COMPLETE  Stack CREATE completed successfully
++---------------------+--------------------------------------------------------+
+| Field               | Value                                                  |
++---------------------+--------------------------------------------------------+
+| id                  | 577e13c8-b157-40df-95af-19564d9346f2                   |
+| stack_name          | frstagingenm02_vnflcm_security_group                   |
+| description         | VNF-LCM Heat Template 5.7.26 to create Security Group. |
+|                     |                                                        |
+| creation_time       | 2019-10-29T12:41:46Z                                   |
+| updated_time        | None                                                   |
+| stack_status        | CREATE_COMPLETE                                        |
+| stack_status_reason | Stack CREATE completed successfully                    |
++---------------------+--------------------------------------------------------+
+
+
+[frstagingenm02@openstack-client sed]$ openstack volume create --size 120 frstagingenm02_vnflcm_volume
++---------------------+--------------------------------------+
+| Field               | Value                                |
++---------------------+--------------------------------------+
+| attachments         | []                                   |
+| availability_zone   | nova                                 |
+| bootable            | false                                |
+| consistencygroup_id | None                                 |
+| created_at          | 2019-10-29T12:30:14.452271           |
+| description         | None                                 |
+| encrypted           | False                                |
+| id                  | b00078f4-8564-4e7e-9ef5-4bb0ead29119 |
+| migration_status    | None                                 |
+| multiattach         | False                                |
+| name                | frstagingenm02_vnflcm_volume         |
+| properties          |                                      |
+| replication_status  | disabled                             |
+| size                | 120                                  |
+| snapshot_id         | None                                 |
+| source_volid        | None                                 |
+| status              | creating                             |
+| type                | None                                 |
+| updated_at          | None                                 |
+| user_id             | c91b2dc4089947e98ce75cecfe930114     |
+
++---------------------+--------------------------------------+
+
+ openstack stack create --wait -e /home/frstagingenm02/sed/LAF_SiteEngineering_Frankfurt_frstagingenm02.json -t /tmp-19.09/VNF-LCM/vnflcm-server-group.yaml frstagingenm02_vnflcm_server
+2019-10-29 12:46:07Z [frstagingenm02_vnflcm_server]: CREATE_IN_PROGRESS  Stack CREATE started
+2019-10-29 12:46:07Z [frstagingenm02_vnflcm_server.vnflaf-server-group]: CREATE_IN_PROGRESS  state changed
+2019-10-29 12:46:08Z [frstagingenm02_vnflcm_server.vnflaf-server-group]: CREATE_COMPLETE  state changed
+2019-10-29 12:46:09Z [frstagingenm02_vnflcm_server]: CREATE_COMPLETE  Stack CREATE completed successfully
++---------------------+----------------------------------------------+
+| Field               | Value                                        |
++---------------------+----------------------------------------------+
+| id                  | 5888ee43-6ac3-4036-afb2-180f45f3201b         |
+| stack_name          | frstagingenm02_vnflcm_server                 |
+| description         | VNF-LCM Heat Template to create ServerGroup. |
+|                     |                                              |
+| creation_time       | 2019-10-29T12:46:07Z                         |
+| updated_time        | None                                         |
+| stack_status        | CREATE_COMPLETE                              |
+| stack_status_reason | Stack CREATE completed successfully          |
++---------------------+----------------------------------------------+
+
+
+
+
+copy all the key_pair, security-group, server-group (vm and db), internal_network_id  and cinder volume id in VNF LAF sed json file
+
+
+
+ openstack stack create --wait -e /home/frstagingenm02/sed/LAF_SiteEngineering_Frankfurt_frstagingenm02.json -t /tmp-19.09/VNF-LCM/vnflcm-heat-template-static-cinder-ipv4.yaml frstagingenm02_VNFLCM
+2019-10-29 13:07:40Z [frstagingenm02_VNFLCM]: CREATE_IN_PROGRESS  Stack CREATE started
+2019-10-29 13:07:40Z [frstagingenm02_VNFLCM.vnflaf-db]: CREATE_IN_PROGRESS  state changed
+2019-10-29 13:08:08Z [frstagingenm02_VNFLCM.vnflaf-db]: CREATE_COMPLETE  state changed
+2019-10-29 13:08:08Z [frstagingenm02_VNFLCM.vnflaf-services]: CREATE_IN_PROGRESS  state changed
+2019-10-29 13:08:31Z [frstagingenm02_VNFLCM.vnflaf-services]: CREATE_COMPLETE  state changed
+2019-10-29 13:08:31Z [frstagingenm02_VNFLCM]: CREATE_COMPLETE  Stack CREATE completed successfully
++---------------------+---------------------------------------------------------------------------------------+
+| Field               | Value                                                                                 |
++---------------------+---------------------------------------------------------------------------------------+
+| id                  | 6555bc08-5e38-489f-a21b-cd01276c488d                                                  |
+| stack_name          | frstagingenm02_VNFLCM                                                                 |
+| description         | VNF-LCM Full Stack HOT template 5.7.26 in Openstack based cloud(Redhat, CEE and VIO). |
+|                     |                                                                                       |
+| creation_time       | 2019-10-29T13:07:40Z                                                                  |
+| updated_time        | None                                                                                  |
+| stack_status        | CREATE_COMPLETE                                                                       |
+| stack_status_reason | Stack CREATE completed successfully                                                   |
++---------------------+---------------------------------------------------------------------------------------+
+
+
+login to vnf-service-vm
+==========================
+Update password for vnf gui user
+
+
+update password for vnflcm user
+
+vnflcm oss password
+
+
+login to vnf-db-vm
+====================
+change the db vm password
+
+bundle list
+
+
+--------
+
+copy all the workflow rpms from /tmp/images  to vnf-laf-services vm
+
+install using wfmgr bundle install --package=<>.rpm
+
+
+--------------
+move the sed file to vnf-service-vm
+
+
+--------------
+
+Create ENM network security group rules stack
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

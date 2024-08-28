@@ -1,0 +1,192 @@
+---
+
+- name: Waiting for VNF LAF Service instance to come up
+  wait_for:
+    host: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+    port: 22
+    delay: 10
+    sleep: 30
+    state: started
+    timeout: 1500  
+
+- name: SSH to VNF LAF Services instance 0 and change the password
+  expect:
+    timeout: 60
+    command: "ssh -o StrictHostKeyChecking=no -i /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem cloud-user@{{ vnflaf_stack_result.stack.parameters.external_ipv4_for_services_vm.split(',')[0] | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+    responses:
+      "password:":
+        - "passw0rd"
+        - "N3wP@55w0rd"
+        - "N3wP@55w0rd"
+  ignore_errors: True
+  register: vnf_laf_service_password_change_result_0
+
+- name: SSH to VNF LAF Services instance 1 and change the password
+  expect:
+    timeout: 60
+    command: "ssh -o StrictHostKeyChecking=no -i /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem cloud-user@{{ vnflaf_stack_result.stack.parameters.external_ipv4_for_services_vm.split(',')[1] | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+    responses:
+      "password:":
+        - "passw0rd"
+        - "N3wP@55w0rd"
+        - "N3wP@55w0rd"
+  ignore_errors: True
+  register: vnf_laf_service_password_change_result_1
+
+- name: Print VNF Password Change log
+  debug:
+    msg: "{{ vnf_laf_service_password_change_result_0 }} -- {{ vnf_laf_service_password_change_result_1 }}"
+
+- name: Copy SSH Key to VNF LAF Services instance 
+  copy:
+    src: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+    dest: /tmp/
+  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+  remote_user: "cloud-user"
+  vars:
+    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+  register: copy_result
+
+- name: SSH to VNF LAF Database instance 0 from Services instance and change the password
+  expect:
+    timeout: 130
+    command: "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=120  -o \"ProxyCommand=ssh -i  /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem -W %h:%p -q cloud-user@{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}\" -i  /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem cloud-user@{{ vnflaf_stack_result.stack.parameters.internal_ipv4_for_db_vm.split(',')[0] | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+    responses:
+      "password:":
+        - "passw0rd"
+        - "N3wP@55w0rd"
+        - "N3wP@55w0rd"
+  ignore_errors: True
+  register: vnf_laf_db_password_change_result_0
+
+- name: SSH to VNF LAF Database instance 1 from Services instance and change the password
+  expect:
+    timeout: 130
+    command: "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=120  -o \"ProxyCommand=ssh -i  /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem -W %h:%p -q cloud-user@{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}\" -i  /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem cloud-user@{{ vnflaf_stack_result.stack.parameters.internal_ipv4_for_db_vm.split(',')[1] | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+    responses:
+      "password:":
+        - "passw0rd"
+        - "N3wP@55w0rd"
+        - "N3wP@55w0rd"
+  ignore_errors: True
+  register: vnf_laf_db_password_change_result_1
+
+- name: print debug
+  debug:
+    msg: "{{ vnf_laf_db_password_change_result_0 }} -- {{ vnf_laf_db_password_change_result_1 }}" 
+
+- name: Changing password for vnflcm-admin
+  vars:
+    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+  remote_user: "cloud-user"
+  become: yes
+  become_user: "root"
+  shell: 'echo -e "N3wP@55w0rd\nN3wP@55w0rd" | passwd vnflcm-admin'
+  register: vnflcm_passwordchange_result
+
+- name: VNF LCM Password change result
+  debug:
+    msg: "{{ vnflcm_passwordchange_result }}"
+
+#- name: Creating VNFLAF Dashboard user
+#  vars:
+#    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+#  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+#  remote_user: "cloud-user"
+#  become: yes
+#  become_user: "root"
+#  command: "htpasswd -b /etc/htpasswd/.htpasswd vnfuser passw0rd"
+#  register: dashboard_password_change_result
+#
+#- name: Restart HTTPD Service on VNF LAF Services Instance
+#  vars:
+#    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+#  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+#  remote_user: "cloud-user"
+#  become: yes
+#  become_user: "root"
+#  service:
+#      name: httpd 
+#      state: restarted 
+#     
+#- name: Dashboard Password Change result
+#  debug:
+#    msg: "{{ dashboard_password_change_result }}"
+
+- name: Copying Required Workflow RPMs to VNF LAF Services instance
+  vars:
+    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+  remote_user: "cloud-user"
+  copy:
+    src: "{{ localPathForRPM }}/{{ item }}"
+    dest: "{{ remotePathForRPM }}"
+  with_items: "{{ workflowRPMList }}"
+
+- name: Wait for the service up and running
+  pause:
+    minutes: 20
+
+- name: Check the jboss port open
+  vars:
+    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+  remote_user: "cloud-user"
+  become: yes
+  become_user: "root"
+  wait_for:
+    host: 127.0.0.1
+    port: 9990
+    delay: 10
+    sleep: 30
+    state: started
+    timeout: 1500
+
+- name: Installing the RPMs copied to VNF LAF Services Instance
+  vars:
+    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+  remote_user: "cloud-user"
+  become: yes
+  become_user: "root"
+  command: "/usr/local/bin/wfmgr bundle install --package={{ remotePathForRPM }}/{{ item }}"
+  with_items: "{{ workflowRPMList }}"
+
+- name: Copy ENM SED File to VNF LAF Services Instance
+  vars:
+    ansible_ssh_private_key_file: /home/{{ lafsed.parameter_defaults.vim_tenant_name }}/key/{{ lafsed.parameter_defaults.keypair }}.pem
+  delegate_to: "{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}"
+  remote_user: "cloud-user"
+  become: yes
+  become_user: "root"
+  copy:
+    src: "{{ sedfilelocation.enm }}"
+    dest: "/vnflcm-ext/enm/sed.json"
+    mode: '0774'
+
+- name: Creating Network Security Group Stack for ENM
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.vim_tenant_name }}_network_security_group"
+    state: present
+    template: "{{ heatStacks.network_security_group }}"
+    environment:
+      - "{{ sedfilelocation.enm }}"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+
+- name: Start initial install workflow
+  uri:
+    url: "http://{{ vnflaf_stack_result.stack.parameters.external_ipv4_vip_for_services | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}') | trim  }}/wfs/rest/instances"
+    user: vnfuser
+    password: passw0rd
+    method: POST
+    body: "{ \"definitionId\":\"{{ workflowsInstallDefinition }}\", \"businessKey\":\"Ansible-AutomatedInstall\" }" 
+    force_basic_auth: yes
+    status_code: 201
+    body_format: json

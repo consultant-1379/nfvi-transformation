@@ -1,0 +1,21 @@
+---
+- name: Deploying VNF LAF Server from HOTemplate
+  os_stack:
+    name: "{{ lafsed.parameter_defaults.deployment_id }}_VNFLCM"
+    state: present
+    template: "{{ heatStacks.vnf_laf_server }}"
+    environment:
+      - "/home/{{ lafsed.parameter_defaults.vim_tenant_username }}/sed/lafsed.json"
+    validate_certs: no
+  environment:
+    OS_AUTH_URL: "{{ lookup('env', 'OS_AUTH_URL') }}"
+    OS_PROJECT_ID: "{{ bootstrapvalues.project.id }}"
+    OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') }}"
+    OS_USERNAME: "{{ lafsed.parameter_defaults.vim_tenant_username }}"
+    OS_PASSWORD: "{{ lafsed.parameter_defaults.vim_tenant_user_password }}"
+  register: vnflaf_stack_result
+
+- name: VNF LAF Server Deployment result
+  debug:
+    msg: "{{ vnflaf_stack_result }}"
+

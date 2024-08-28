@@ -1,0 +1,29 @@
+quota:
+  cores: 557
+  fixed_ips: -1
+  instances: 222
+  key_pairs: 5
+  networks: 3
+  port: 320
+  ram: 1521869
+  secgroup_rules: 275
+  secgroups: 10
+  subnets: 3
+  volumes: 121
+  gigabytes: 10408
+  backups: 108
+  backup_gigabytes: 6531
+  snapshots: 50
+  server_groups: 150
+ 
+heatStacks:
+  security_group: "<home-folder>/vnf-infra-templates/Hotfiles/vnflcm-security-group.yaml" #put absolute path for security group
+  internal_network: "<home-folder>/enm-infra-templates/infrastructure_resources/network_internal_stack.yaml"
+  server_group: "<home-folder>/vnf-infra-templates/Hotfiles/vnflcm-server-group.yaml"
+  network_security_group: "<home-folder>/enm-infra-templates/infrastructure_resources/network_security_group_stack.yaml"
+  keypair: "<home-folder>/enm-infra-templates/infrastructure_resources/key_pair.yaml"
+  vnf_laf_vip: "<home-folder>/vnf-infra-templates/Hotfiles/vnflcm-heat-template-static-vip-ipv4.yaml"
+  vnf_laf_server: ""
+sedfilelocation:
+  enm: "/home/migration_home/newcloud-tenancies/trial01admin/sed/sed.json"
+  laf: "/home/migration_home/newcloud-tenancies/trial01admin/sed/vnflcm_sed.json"

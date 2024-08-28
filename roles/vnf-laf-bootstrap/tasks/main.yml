@@ -1,0 +1,39 @@
+---
+- name: Checking if External Network is already configured
+  pause:
+    prompt: Is Tenant External N/w already created? If Yes press "Enter". Else,Press Ctrl+c and then "a" to abort
+
+- name: Checking if Admin Keystone is sourced
+  pause:
+    prompt: Is Admin Keystone sourced? If Yes press "Enter". Else,Press Ctrl+c and then "a" to abort
+
+- name: Setting Variable from LAF SEDocument
+  include_vars:
+    file: "{{ sedfilelocation.laf }}"
+    name: lafsed
+
+- name: Setting Variable from ENM SEDocument
+  include_vars:
+    file: "{{ sedfilelocation.enm }}"
+    name: enmsed
+ 
+#- name: Pre install sedfile checking
+#  include_tasks: pre_install_variables_check.yml
+
+- name: Bootstrap Operating System PreReq
+  include_tasks: pre_operating_system_bootstrap.yml
+
+- name: Bootstrap Openstack Project and User
+  include_tasks: pre_openstack_project_bootstrap.yml
+
+- name: Openstack VNF Resouce and Stack creation
+  include_tasks: pre_openstack_resources_creation.yml 
+
+- name: Populate and store Keystone Credentials
+  include_tasks: pre_populate_sed_rc.yml
+
+- name: Deploy VNF LAF Stack
+  include_tasks: deploy_openstack_vnflaf_stack.yml
+
+#- name: Doing Post install steps for VNF LAF
+#  include_tasks: post_vnflaf_bootstrap.yml

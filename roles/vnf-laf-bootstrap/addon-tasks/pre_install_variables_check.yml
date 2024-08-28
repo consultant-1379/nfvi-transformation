@@ -1,0 +1,112 @@
+---
+
+- name: Network restart
+  service:
+    name: network
+    state: restarted
+
+- name: "Checking the API version"
+  shell: "echo checking"
+  when: "{{ 'v3' in lafsed.parameter_defaults.vim_url }}"
+  register: api_checking
+
+- name: Check that you can connect to the API and it returns a status 200
+  uri:
+    url: " {{ lafsed.parameter_defaults.vim_url }} "
+    validate_certs: no
+  register: vim_url_checking
+
+- name: Check for enviroment variables | OS_AUTH_URL
+  shell: echo {{ ansible_env.OS_AUTH_URL }}
+  when: "'OS_AUTH_URL' in ansible_env"
+
+- name: Check for enviroment variables | OS_TENANT_NAME
+  shell: echo {{ ansible_env.OS_TENANT_NAME }}
+  when: "'OS_TENANT_NAME' in ansible_env"
+
+- name: Check for enviroment variables | OS_USERNAME
+  shell: echo {{ ansible_env.OS_USERNAME }}
+  when: "'OS_USERNAME' in ansible_env"
+
+- name: Check for enviroment variables | OS_PASSWORD
+  shell: echo {{ ansible_env.OS_PASSWORD }}
+  when: "'OS_PASSWORD' in ansible_env"
+
+- name: Checking external_ipv4_vip_for_services IP
+  debug:
+    msg: "Checking external_ipv4_vip_for_services IP is valid"
+  when: lafsed.parameter_defaults.external_ipv4_vip_for_services | ipv4
+  register: external_ipv4_vip_for_services_checking
+
+- name: Checking external_ipv4_for_services_vm IP
+  debug:
+    msg: "Checking external_ipv4_for_services_vm IP is valid"
+  when: lafsed.parameter_defaults.external_ipv4_for_services_vm.split(',')[0] | ipv4
+  register: external_ipv4_for_services_vm_0
+
+- name: Checking external_ipv4_for_services_vm IP
+  debug:
+    msg: "Checking external_ipv4_for_services_vm IP is valid"
+  when: lafsed.parameter_defaults.external_ipv4_for_services_vm.split(',')[1] | ipv4
+  register: external_ipv4_for_services_vm_1
+
+- name: Checking internal_ipv4_for_services_vm IP
+  debug:
+    msg: "Checking internal_ipv4_for_services_vm IP is valid"
+  when: lafsed.parameter_defaults.internal_ipv4_for_services_vm.split(',')[0] | ipv4
+  register: internal_ipv4_for_services_vm_0
+
+- name: Checking internal_ipv4_for_services_vm IP
+  debug:
+    msg: "Checking internal_ipv4_for_services_vm IP is valid"
+  when: lafsed.parameter_defaults.internal_ipv4_for_services_vm.split(',')[1] | ipv4
+  register: internal_ipv4_for_services_vm_1
+
+  - name: Checking internal_ipv4_for_db_vm IP
+  debug:
+    msg: "Checking internal_ipv4_for_db_vm IP is valid"
+  when: lafsed.parameter_defaults.internal_ipv4_for_db_vm.split(',')[0] | ipv4
+  register: internal_ipv4_for_db_vm_ip_checking_0
+
+  - name: Checking internal_ipv4_for_db_vm IP
+  debug:
+    msg: "Checking internal_ipv4_for_db_vm IP is valid"
+  when: lafsed.parameter_defaults.internal_ipv4_for_db_vm.split(',')[1] | ipv4
+  register: internal_ipv4_for_db_vm_ip_checking_1
+
+- name: Check the RPMs list
+  shell: "echo workflowRPMList"
+  when:  workflowRPMList  is defined and workflowRPMList | length > 0
+
+- name: Check the LocalPath RPMs
+  shell: "echo {{ localPathForRPM }}"
+  when:  localPathForRPM != ""
+
+- name: Check the ENM Sedfile location
+  shell: "echo {{ sedfilelocation.enm }}"
+  when:  sedfilelocation.enm != ""
+
+- name: Check the laf Sedfile location
+  shell: "echo {{ sedfilelocation.laf }}"
+  when:  sedfilelocation.laf != ""
+
+- name: Check the heatStacks security_group location
+  shell: "echo {{ heatStacks.security_group }}"
+  when:  heatStacks.security_group != ""
+
+
+- name: Check the heatStacks internal_network location
+  shell: "echo {{ heatStacks.internal_network }}"
+  when:  heatStacks.internal_network != ""
+
+- name: Check the heatStacks server_group location
+  shell: "echo {{ heatStacks.server_group }}"
+  when:  heatStacks.server_group != ""
+
+- name: Check the heatStacks vnf_laf_server location
+  shell: "echo {{ heatStacks.vnf_laf_server }}"
+  when:  heatStacks.vnf_laf_server != ""
+
+- name: Check the heatStacks vnf_laf_vip location
+  shell: "echo {{ heatStacks.vnf_laf_vip }}"
+  when:  heatStacks.vnf_laf_vip != ""
